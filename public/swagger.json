@@ -1,0 +1,36 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Rede Raízes do Nordeste",
+        "description": "Documentação da API para o Projeto Multidisciplinar Back-End",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080/api",
+            "description": "Servidor Local"
+        }
+    ],
+    "paths": {
+        "/unidades": {
+            "get": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Listar todas as unidades",
+                "operationId": "bdedabec87a330bac1c5495c1e4094c7",
+                "responses": {
+                    "200": {
+                        "description": "Lista de unidades retornada com sucesso"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Unidades",
+            "description": "Unidades"
+        }
+    ]
+}
