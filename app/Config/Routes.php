@@ -7,25 +7,33 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 
-// Grupo de rotas da API
 $routes->group('api', ['namespace' => 'App\Controllers\Api'], function ($routes) {
 
-    // 1. Autenticação
+    // 1. Autenticação & Usuários
     $routes->post('auth/login', 'AuthController::login');
+    $routes->get('auth/dados', 'AuthController::dados');
 
-    $routes->get('unidades', 'UnidadesController::index');          // Listar todas as unidades
-    $routes->get('unidades/(:num)', 'UnidadesController::show/$1'); // Detalhar uma unidade específica
-    $routes->post('unidades', 'UnidadesController::create');      // Cadastrar nova unidade (Admin)
+    // 2. Unidades
+    $routes->get('unidades', 'UnidadesController::index');
+    $routes->get('unidades/(:num)', 'UnidadesController::show/$1');
+    $routes->post('unidades', 'UnidadesController::create');
 
-    // (Futuro) Estrutura para os próximos módulos do projeto:
-    /*
+    // 3. Cardápio de Produtos & Estoque
     $routes->get('produtos', 'ProdutosController::index');
     $routes->get('produtos/(:num)', 'ProdutosController::show/$1');
-    
-    $routes->post('pedidos', 'PedidosController::create');          // Requer canalPedido
-    $routes->get('pedidos', 'PedidosController::index');            // Filtro por ?canalPedido=...
+
+    // 4. Pedidos & Multicanalidade
+    $routes->post('pedidos', 'PedidosController::create');
+    $routes->get('pedidos', 'PedidosController::index');
+    $routes->get('pedidos/(:num)', 'PedidosController::show/$1');
     $routes->patch('pedidos/(:num)/status', 'PedidosController::updateStatus');
-    
-    $routes->post('pagamentos', 'PagamentosController::mock');
-    */
+
+    // 5. Integração Desacoplada de Pagamento 
+    $routes->post('pagamentos/mock', 'PagamentosController::processarMock');
+
+    // 6. LGPD & Privacidade
+    $routes->post('lgpd/consentimento', 'LgpdController::registrarConsentimento');
+
+    // 7. Auditoria & Rastreabilidade
+    $routes->get('auditoria/logs', 'AuditoriaController::index');
 });

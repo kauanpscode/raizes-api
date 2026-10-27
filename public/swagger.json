@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "API Rede Raízes do Nordeste",
+        "title": "API Raízes do Nordeste",
         "description": "Documentação da API para o Projeto Multidisciplinar Back-End",
         "version": "1.0.0"
     },
@@ -12,22 +12,245 @@
         }
     ],
     "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Autenticar usuário",
+                "description": "Valida as credenciais e retorna o token de acesso com o perfil do usuário.",
+                "operationId": "c542ba0f20b129ebb73c48d9561d560b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "senha"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@raizesdonordeste.com.br"
+                                    },
+                                    "senha": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Admin@123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login realizado com sucesso e token gerado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "accessToken": {
+                                            "type": "string",
+                                            "example": "eyJhbGciOi..."
+                                        },
+                                        "tokenType": {
+                                            "type": "string",
+                                            "example": "Bearer"
+                                        },
+                                        "expiresIn": {
+                                            "type": "integer",
+                                            "example": 3600
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "nome": {
+                                                    "type": "string",
+                                                    "example": "Dona Francisca"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "admin@raizesdonordeste.com.br"
+                                                },
+                                                "id_perfil": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "perfil": {
+                                                    "type": "string",
+                                                    "example": "ADMIN"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas"
+                    },
+                    "422": {
+                        "description": "Campos obrigatórios ausentes"
+                    }
+                }
+            }
+        },
+        "/auth/dados": {
+            "get": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Obter dados do usuário autenticado via Bearer Token",
+                "operationId": "d6f5531f7d7e759ef96f8216549b70df",
+                "responses": {
+                    "200": {
+                        "description": "Dados do usuário autenticado"
+                    },
+                    "401": {
+                        "description": "Token não informado ou inválido"
+                    }
+                }
+            }
+        },
         "/unidades": {
             "get": {
                 "tags": [
                     "Unidades"
                 ],
-                "summary": "Listar todas as unidades",
+                "summary": "Listar todas as unidades da franquia",
+                "description": "Retorna a lista de matriz e filiais ativas.",
                 "operationId": "bdedabec87a330bac1c5495c1e4094c7",
+                "parameters": [
+                    {
+                        "name": "uf",
+                        "in": "query",
+                        "description": "Filtrar unidades por UF",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "PE"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Lista de unidades retornada com sucesso"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Cadastrar nova unidade (Expansão da rede)",
+                "description": "Cadastra uma nova filial no sistema. Exige código, nome fantasia, CNPJ, cidade e UF.",
+                "operationId": "b2b1d34b6d4a25b401d5851fc418b251",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "codigo",
+                                    "nome_fantasia",
+                                    "cnpj",
+                                    "cidade",
+                                    "uf"
+                                ],
+                                "properties": {
+                                    "codigo": {
+                                        "type": "string",
+                                        "example": "NAT-01"
+                                    },
+                                    "nome_fantasia": {
+                                        "type": "string",
+                                        "example": "Raízes do Nordeste - Filial Natal"
+                                    },
+                                    "razao_social": {
+                                        "type": "string",
+                                        "example": "Raizes Natal Lanchonete Ltda"
+                                    },
+                                    "cnpj": {
+                                        "type": "string",
+                                        "example": "12345678000433"
+                                    },
+                                    "cidade": {
+                                        "type": "string",
+                                        "example": "Natal"
+                                    },
+                                    "uf": {
+                                        "type": "string",
+                                        "example": "RN"
+                                    },
+                                    "tipo_unidade": {
+                                        "type": "string",
+                                        "example": "FILIAL"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Unidade cadastrada com sucesso"
+                    },
+                    "409": {
+                        "description": "Código ou CNPJ já cadastrado"
+                    },
+                    "422": {
+                        "description": "Campos obrigatórios ausentes"
+                    }
+                }
+            }
+        },
+        "/unidades/{id}": {
+            "get": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Detalhes de uma unidade específica",
+                "description": "Busca os dados de uma unidade pelo ID. Retorna 404 caso não seja encontrada.",
+                "operationId": "0029192d061c50a3a57d235d9b0887da",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID numérico da unidade",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unidade localizada com sucesso"
+                    },
+                    "404": {
+                        "description": "Unidade não encontrada"
                     }
                 }
             }
         }
     },
     "tags": [
+        {
+            "name": "Autenticação",
+            "description": "Autenticação"
+        },
         {
             "name": "Unidades",
             "description": "Unidades"
