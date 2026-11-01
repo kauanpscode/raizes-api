@@ -40,4 +40,21 @@ class UnidadeModel extends Model
 
         return $this->query($sql, $params)->getResult();
     }
+
+    public function unidadeExiste(array $dados): ?array
+    {
+        $sql = "SELECT * 
+                FROM unidades 
+                WHERE codigo = ? OR cnpj = ? 
+                LIMIT 1";
+
+        $query = $this->db->query($sql, [
+            $dados['codigo'],
+            $dados['cnpj']
+        ]);
+
+        $registro = $query->getRowArray();
+
+        return $registro ?: null;
+    }
 }

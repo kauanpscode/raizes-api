@@ -18,7 +18,7 @@ class UnidadesController extends ResourceController
     #[OA\Get(
         path: "/unidades",
         summary: "Listar todas as unidades da franquia",
-        description: "Retorna a lista de matriz e filiais ativas.",
+        description: "Retorna a lista de unidades ativas.",
         tags: ["Unidades"],
         parameters: [
             new OA\Parameter(
@@ -51,13 +51,13 @@ class UnidadesController extends ResourceController
     #[OA\Get(
         path: "/unidades/{id}",
         summary: "Detalhes de uma unidade específica",
-        description: "Busca os dados de uma unidade pelo ID. Retorna 404 caso não seja encontrada.",
+        description: "Busca os dados de uma unidade pelo ID.",
         tags: ["Unidades"],
         parameters: [
             new OA\Parameter(
                 name: "id",
                 in: "path",
-                description: "ID numérico da unidade",
+                description: "ID da unidade",
                 required: true,
                 schema: new OA\Schema(type: "integer", example: 1)
             )
@@ -67,12 +67,11 @@ class UnidadesController extends ResourceController
             new OA\Response(response: 404, description: "Unidade não encontrada")
         ]
     )]
-    public function show($id = null)
+    public function getUnidade($id = null)
     {
         $unidade = $this->unidadeModel->find($id);
 
         if (!$unidade) {
-            // Usa o script_helper para retornar o JSON padronizado com HTTP 404
             return erro_json(
                 'UNIDADE_NAO_ENCONTRADA',
                 "A unidade com ID {$id} não foi encontrada no sistema.",
@@ -86,7 +85,7 @@ class UnidadesController extends ResourceController
 
     #[OA\Post(
         path: "/unidades",
-        summary: "Cadastrar nova unidade (Expansão da rede)",
+        summary: "Cadastrar nova unidade",
         description: "Cadastra uma nova filial no sistema. Exige código, nome fantasia, CNPJ, cidade e UF.",
         tags: ["Unidades"],
         requestBody: new OA\RequestBody(
@@ -110,11 +109,10 @@ class UnidadesController extends ResourceController
             new OA\Response(response: 422, description: "Campos obrigatórios ausentes")
         ]
     )]
-    public function create()
+    public function criaEmpresa()
     {
         $dados = $this->request->getJSON(true);
 
-        // 1. Validação de campos obrigatórios
         $obrigatorios = ['codigo', 'nome_fantasia', 'cnpj', 'cidade', 'uf'];
         $erros = [];
 
@@ -133,10 +131,7 @@ class UnidadesController extends ResourceController
             );
         }
 
-        // 2. Verifica se o código ou CNPJ já estão em uso (Regra de Negócio: Unicidade)
-        $existe = $this->unidadeModel->where('codigo', $dados['codigo'])
-                                     ->orWhere('cnpj', $dados['cnpj'])
-                                     ->first();
+        $existe = $this->unidadeModel->unidadeExiste($dados['codigo'], $dados['cnpj']);
 
         if ($existe) {
             return erro_json(
@@ -147,7 +142,6 @@ class UnidadesController extends ResourceController
             );
         }
 
-        // 3. Insere a nova unidade no banco
         $novoId = $this->unidadeModel->insert([
             'codigo'        => strtoupper(trim($dados['codigo'])),
             'razao_social'  => $dados['razao_social'] ?? $dados['nome_fantasia'],

@@ -122,13 +122,285 @@
                 }
             }
         },
+        "/pedidos": {
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Listar pedidos",
+                "description": "Lista pedidos com opção de filtro por canal de atendimento e status.",
+                "operationId": "833aad5dcc2d45363bb6cfbcce5e55fa",
+                "parameters": [
+                    {
+                        "name": "canalPedido",
+                        "in": "query",
+                        "description": "Filtrar por canal de origem (APP, TOTEM, BALCAO, PICKUP, WEB)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "TOTEM"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrar por status do pedido (AGUARDANDO_PAGAMENTO, PAGO, EM_PREPARO, PRONTO, ENTREGUE, CANCELADO)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "AGUARDANDO_PAGAMENTO"
+                        }
+                    },
+                    {
+                        "name": "unidadeId",
+                        "in": "query",
+                        "description": "Filtrar por unidade física",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de pedidos recuperada com sucesso"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Criar novo pedido",
+                "description": "Valida regras de negócio, verifica o estoque por unidade, valida o campo obrigatório canalPedido e cria o pedido com status AGUARDANDO_PAGAMENTO.",
+                "operationId": "73b5161a3d2661603f3cf7c7ec92b4b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "canalPedido",
+                                    "unidadeId",
+                                    "itens"
+                                ],
+                                "properties": {
+                                    "canalPedido": {
+                                        "description": "Valores: APP, TOTEM, BALCAO, PICKUP, WEB",
+                                        "type": "string",
+                                        "example": "TOTEM"
+                                    },
+                                    "unidadeId": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "usuarioId": {
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "formaPagamento": {
+                                        "type": "string",
+                                        "example": "PIX"
+                                    },
+                                    "observacoes": {
+                                        "type": "string",
+                                        "example": "Sem cebola"
+                                    },
+                                    "itens": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "produtoId": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "quantidade": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pedido criado com sucesso"
+                    },
+                    "404": {
+                        "description": "Unidade ou Produto não encontrado"
+                    },
+                    "409": {
+                        "description": "Estoque insuficiente para um ou mais itens"
+                    },
+                    "422": {
+                        "description": "Dados obrigatórios ausentes ou inválidos"
+                    }
+                }
+            }
+        },
+        "/pedidos/{id}": {
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Detalhes de um pedido específico e seus itens",
+                "operationId": "002f94f77f0e133da66582bdb7fcf80c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pedido",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pedido e itens localizados"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    }
+                }
+            }
+        },
+        "/pedidos/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Atualizar ciclo de status do pedido",
+                "description": "Atualiza o status do pedido (PAGO, EM_PREPARO, PRONTO, ENTREGUE, CANCELADO) e registra log de auditoria.",
+                "operationId": "be88bf0513956c88480059932448715f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pedido",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "EM_PREPARO"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status atualizado com sucesso"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    },
+                    "422": {
+                        "description": "Status inválido ou não permitido"
+                    }
+                }
+            }
+        },
+        "/produtos": {
+            "get": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Listar cardápio de produtos da franquia",
+                "description": "Retorna a lista de produtos regionais ativos, permitindo filtro opcional por categoria ou por unidade.",
+                "operationId": "81ac3087c03f300c905934ce8c4cba2a",
+                "parameters": [
+                    {
+                        "name": "categoria",
+                        "in": "query",
+                        "description": "Filtrar por categoria (ex: Cuscuz, Tapiocas, Sobremesas, Bebidas, Juninos)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Cuscuz"
+                        }
+                    },
+                    {
+                        "name": "unidadeId",
+                        "in": "query",
+                        "description": "Filtrar produtos disponíveis no estoque de uma unidade específica",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cardápio recuperado com sucesso"
+                    }
+                }
+            }
+        },
+        "/produtos/{id}": {
+            "get": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Detalhes de um produto específico",
+                "description": "Busca os dados de um item do cardápio pelo ID. Retorna 404 se não for encontrado.",
+                "operationId": "0aa34fea1148a8fca2c7eb666226e97d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID numérico do produto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Produto localizado com sucesso"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    }
+                }
+            }
+        },
         "/unidades": {
             "get": {
                 "tags": [
                     "Unidades"
                 ],
                 "summary": "Listar todas as unidades da franquia",
-                "description": "Retorna a lista de matriz e filiais ativas.",
+                "description": "Retorna a lista de unidades ativas.",
                 "operationId": "bdedabec87a330bac1c5495c1e4094c7",
                 "parameters": [
                     {
@@ -152,9 +424,9 @@
                 "tags": [
                     "Unidades"
                 ],
-                "summary": "Cadastrar nova unidade (Expansão da rede)",
+                "summary": "Cadastrar nova unidade",
                 "description": "Cadastra uma nova filial no sistema. Exige código, nome fantasia, CNPJ, cidade e UF.",
-                "operationId": "b2b1d34b6d4a25b401d5851fc418b251",
+                "operationId": "75ac4a9b4a40d7fbc4d1bf4e22490eb7",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -221,13 +493,13 @@
                     "Unidades"
                 ],
                 "summary": "Detalhes de uma unidade específica",
-                "description": "Busca os dados de uma unidade pelo ID. Retorna 404 caso não seja encontrada.",
-                "operationId": "0029192d061c50a3a57d235d9b0887da",
+                "description": "Busca os dados de uma unidade pelo ID.",
+                "operationId": "4c1255e82c383a60d12bbbce82f5480a",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID numérico da unidade",
+                        "description": "ID da unidade",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -250,6 +522,14 @@
         {
             "name": "Autenticação",
             "description": "Autenticação"
+        },
+        {
+            "name": "Pedidos",
+            "description": "Pedidos"
+        },
+        {
+            "name": "Produtos",
+            "description": "Produtos"
         },
         {
             "name": "Unidades",

@@ -15,20 +15,20 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function ($routes)
 
     // 2. Unidades
     $routes->get('unidades', 'UnidadesController::index');
-    $routes->get('unidades/(:num)', 'UnidadesController::show/$1');
-    $routes->post('unidades', 'UnidadesController::create');
+    $routes->get('unidades/(:num)', 'UnidadesController::getUnidade/$1');
+    $routes->post('unidades', 'UnidadesController::criaEmpresa');
 
     // 3. Cardápio de Produtos & Estoque
     $routes->get('produtos', 'ProdutosController::index');
-    $routes->get('produtos/(:num)', 'ProdutosController::show/$1');
+    $routes->get('produtos/(:num)', 'ProdutosController::getProdutos/$1');
 
     // 4. Pedidos & Multicanalidade
     $routes->post('pedidos', 'PedidosController::create');
     $routes->get('pedidos', 'PedidosController::index');
-    $routes->get('pedidos/(:num)', 'PedidosController::show/$1');
-    $routes->patch('pedidos/(:num)/status', 'PedidosController::updateStatus');
+    $routes->get('pedidos/(:num)', 'PedidosController::getPedidos/$1');
+    $routes->patch('pedidos/(:num)/status', 'PedidosController::atualizarPedido/$1');
 
-    // 5. Integração Desacoplada de Pagamento 
+    // 5. Integração de Pagamento 
     $routes->post('pagamentos/mock', 'PagamentosController::processarMock');
 
     // 6. LGPD & Privacidade
