@@ -23,7 +23,7 @@ class PedidoModel extends Model
     {
         parent::__construct();
 
-        $colunasTabela = $this->db->getFieldNames($this->table);
+        $colunasTabela = $this->getFieldNames($this->table);
         $this->allowedFields = $colunasTabela;
     }
 
@@ -54,8 +54,21 @@ class PedidoModel extends Model
 
         $sql .= " ORDER BY pedidos.id DESC";
 
-        $query = $this->db->query($sql, $params);
+        $query = $this->query($sql, $params);
         return $query->getResultArray();
+    }
+
+    public function getPedidoComItens(int $id): ?array
+    {
+        $pedido = $this->find($id);
+        if (!$pedido) {
+            return null;
+        }
+
+        $itemPedidoModel = model('ItemPedidoModel');
+        $pedido['itens'] = $itemPedidoModel->getItensPorPedido($id);
+
+        return $pedido;
     }
 
     public function gerarNumeroPedido(): string
@@ -63,11 +76,116 @@ class PedidoModel extends Model
         $ano = date('Y');
 
         $sql = "SELECT id FROM pedidos ORDER BY id DESC LIMIT 1";
-        $query = $this->db->query($sql);
+        $query = $this->query($sql);
         $ultimo = $query->getRowArray();
 
         $proximo = $ultimo ? ((int)$ultimo['id'] + 1) : 1;
 
         return sprintf("PED-%s-%04d", $ano, $proximo);
+    }
+    public function criarPedidoCompleto(array $dadosPedido, array $itensProcessados)
+    {
+        $this->transStart();
+
+        $numeroPedido = $this->gerarNumeroPedido();
+        $dadosPedido['numero_pedido'] = $numeroPedido;
+
+        $pedidoId = $this->insert($dadosPedido);
+
+        $itemPedidoModel = model('ItemPedidoModel');
+        $estoqueModel    = model('EstoqueUnidadeModel');
+        $auditoriaModel  = model('AuditoriaModel');
+
+        foreach ($itensProcessados as $item) {
+            $itemPedidoModel->insert([
+                'pedido_id'      => $pedidoId,
+                'produto_id'     => $item['produto_id'],
+                'quantidade'     => $item['quantidade'],
+                'preco_unitario' => $item['preco_unitario'],
+                'subtotal'       => $item['subtotal'],
+                'observacao'     => $item['observacao'] ?? null,
+            ]);
+
+            $estoqueModel->darBaixa(
+                (int)$dadosPedido['unidade_id'],
+                (int)$item['produto_id'],
+                (int)$item['quantidade']
+            );
+        }
+
+        $auditoriaModel->registrarLog(
+            'CRIAR_PEDIDO',
+            'pedidos',
+            (string)$pedidoId,
+            $dadosPedido['usuario_id'] ?? null,
+            $dadosPedido['canal_pedido'],
+            [
+                'numero_pedido' => $numeroPedido,
+                'total'         => $dadosPedido['valor_total'],
+                'itens_qtd'     => count($itensProcessados)
+            ]
+        );
+
+        $this->transComplete();
+
+        if ($this->transStatus() === false) {
+            return false;
+        }
+
+        return [
+            'pedidoId'     => (int)$pedidoId,
+            'numeroPedido' => $numeroPedido,
+            'status'       => $dadosPedido['status'],
+            'canalPedido'  => $dadosPedido['canal_pedido'],
+            'total'        => round((float)$dadosPedido['valor_total'], 2),
+            'itens'        => array_map(static function ($i) {
+                return [
+                    'produtoId'     => (int)$i['produto_id'],
+                    'nome'          => $i['nome'],
+                    'quantidade'    => (int)$i['quantidade'],
+                    'precoUnitario' => round((float)$i['preco_unitario'], 2),
+                    'subtotal'      => round((float)$i['subtotal'], 2),
+                ];
+            }, $itensProcessados),
+            'createdAt'    => gmdate('Y-m-d\TH:i:s\Z')
+        ];
+    }
+
+    public function atualizarStatus(int $id, string $novoStatus)
+    {
+        $pedido = $this->find($id);
+        if (!$pedido) {
+            return false;
+        }
+
+        $statusAnterior = $pedido['status'];
+
+        $this->transStart();
+
+        $this->update($id, ['status' => $novoStatus]);
+
+        $auditoriaModel = model('AuditoriaModel');
+        $auditoriaModel->registrarLog(
+            'MUDAR_STATUS_PEDIDO',
+            'pedidos',
+            (string)$id,
+            null,
+            $pedido['canal_pedido'],
+            ['status_anterior' => $statusAnterior, 'novo_status' => $novoStatus]
+        );
+
+        $this->transComplete();
+
+        if ($this->transStatus() === false) {
+            return false;
+        }
+
+        return [
+            'pedidoId'       => (int)$id,
+            'numeroPedido'   => $pedido['numero_pedido'],
+            'statusAnterior' => $statusAnterior,
+            'statusAtual'    => $novoStatus,
+            'updatedAt'      => gmdate('Y-m-d\TH:i:s\Z')
+        ];
     }
 }

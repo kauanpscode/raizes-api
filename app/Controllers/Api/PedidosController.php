@@ -8,11 +8,9 @@ use OpenApi\Attributes as OA;
 class PedidosController extends ResourceController
 {
     protected $pedidoModel;
-    protected $itemPedidoModel;
     protected $produtoModel;
     protected $estoqueModel;
     protected $unidadeModel;
-    protected $auditoriaModel;
     protected $helpers = ['script'];
 
     private const CANAIS_VALIDOS = ['APP', 'TOTEM', 'BALCAO', 'PICKUP', 'WEB'];
@@ -20,12 +18,10 @@ class PedidosController extends ResourceController
 
     public function __construct()
     {
-        $this->pedidoModel     = model('PedidoModel');
-        $this->itemPedidoModel = model('ItemPedidoModel');
-        $this->produtoModel    = model('ProdutoModel');
-        $this->estoqueModel    = model('EstoqueUnidadeModel');
-        $this->unidadeModel    = model('UnidadeModel');
-        $this->auditoriaModel  = model('AuditoriaModel');
+        $this->pedidoModel  = model('PedidoModel');
+        $this->produtoModel = model('ProdutoModel');
+        $this->estoqueModel = model('EstoqueUnidadeModel');
+        $this->unidadeModel = model('UnidadeModel');
     }
 
     #[OA\Get(
@@ -107,7 +103,7 @@ class PedidosController extends ResourceController
     )]
     public function show($id = null)
     {
-        $pedido = $this->pedidoModel->find($id);
+        $pedido = $this->pedidoModel->getPedidoComItens((int)$id);
 
         if (!$pedido) {
             return erro_json(
@@ -118,9 +114,12 @@ class PedidosController extends ResourceController
             );
         }
 
-        $pedido['itens'] = $this->itemPedidoModel->getItensPorPedido((int)$id);
-
         return $this->respond($pedido, 200);
+    }
+
+    public function getPedidos($id = null)
+    {
+        return $this->show($id);
     }
 
     #[OA\Post(
@@ -162,7 +161,7 @@ class PedidosController extends ResourceController
     {
         $dados = $this->request->getJSON(true);
 
-        // 1. Validação de presença do canalPedido (Obrigatório segundo o edital)
+        // 1. Validação de presença do canalPedido
         if (empty($dados['canalPedido'])) {
             return erro_json(
                 'VALOR_INVALIDO',
@@ -182,7 +181,7 @@ class PedidosController extends ResourceController
             );
         }
 
-        // 2. Validação da unidade
+        // 2. Validação da unidade física
         if (empty($dados['unidadeId'])) {
             return erro_json(
                 'CAMPOS_OBRIGATORIOS_AUSENTES',
@@ -202,7 +201,7 @@ class PedidosController extends ResourceController
             );
         }
 
-        // 3. Validação dos itens
+        // 3. Validação da lista de itens
         if (empty($dados['itens']) || !is_array($dados['itens'])) {
             return erro_json(
                 'ITENS_INVALIDOS',
@@ -212,7 +211,7 @@ class PedidosController extends ResourceController
             );
         }
 
-        // 4. Verificação de existência e checagem de estoque item a item
+        // 4. Validação de existência de produto e estoque
         $itensProcessados = [];
         $valorTotal = 0.0;
 
@@ -260,7 +259,7 @@ class PedidosController extends ResourceController
             $valorTotal   += $subtotal;
 
             $itensProcessados[] = [
-                'produto_id'     => $produtoId,
+                'produto_id'     => (int)$produtoId,
                 'nome'           => $produto['nome'],
                 'quantidade'     => $quantidade,
                 'preco_unitario' => $precoUnitario,
@@ -269,14 +268,8 @@ class PedidosController extends ResourceController
             ];
         }
 
-        // 5. Transação no banco de dados para garantir atomicidade
-        $db = \Config\Database::connect();
-        $db->transStart();
-
-        $numeroPedido = $this->pedidoModel->gerarNumeroPedido();
-
-        $pedidoId = $this->pedidoModel->insert([
-            'numero_pedido'  => $numeroPedido,
+        // 5. Delegação completa da transação para a Model (Separação de Responsabilidades)
+        $dadosPedido = [
             'unidade_id'     => (int)$dados['unidadeId'],
             'usuario_id'     => !empty($dados['usuarioId']) ? (int)$dados['usuarioId'] : null,
             'canal_pedido'   => $canalPedido,
@@ -285,35 +278,11 @@ class PedidosController extends ResourceController
             'valor_desconto' => 0.00,
             'valor_total'    => $valorTotal,
             'observacoes'    => $dados['observacoes'] ?? null,
-        ]);
+        ];
 
-        foreach ($itensProcessados as $item) {
-            $this->itemPedidoModel->insert([
-                'pedido_id'      => $pedidoId,
-                'produto_id'     => $item['produto_id'],
-                'quantidade'     => $item['quantidade'],
-                'preco_unitario' => $item['preco_unitario'],
-                'subtotal'       => $item['subtotal'],
-                'observacao'     => $item['observacao'],
-            ]);
+        $resultado = $this->pedidoModel->criarPedidoCompleto($dadosPedido, $itensProcessados);
 
-            // Baixa no estoque da unidade
-            $this->estoqueModel->darBaixa((int)$dados['unidadeId'], (int)$item['produto_id'], (int)$item['quantidade']);
-        }
-
-        // Registro de Auditoria da Operação Sensível
-        $this->auditoriaModel->registrarLog(
-            'CRIAR_PEDIDO',
-            'pedidos',
-            (string)$pedidoId,
-            !empty($dados['usuarioId']) ? (int)$dados['usuarioId'] : null,
-            $canalPedido,
-            ['numero_pedido' => $numeroPedido, 'total' => $valorTotal, 'itens_qtd' => count($itensProcessados)]
-        );
-
-        $db->transComplete();
-
-        if ($db->transStatus() === false) {
+        if (!$resultado) {
             return erro_json(
                 'ERRO_TRANSACAO',
                 'Não foi possível registrar o pedido no banco de dados.',
@@ -322,24 +291,7 @@ class PedidosController extends ResourceController
             );
         }
 
-        // Retorno oficial exigido no roteiro (página 21-22 do PDF da UNINTER)
-        return $this->respondCreated([
-            'pedidoId'     => (int)$pedidoId,
-            'numeroPedido' => $numeroPedido,
-            'status'       => 'AGUARDANDO_PAGAMENTO',
-            'canalPedido'  => $canalPedido,
-            'total'        => round($valorTotal, 2),
-            'itens'        => array_map(static function ($i) {
-                return [
-                    'produtoId'     => (int)$i['produto_id'],
-                    'nome'          => $i['nome'],
-                    'quantidade'    => (int)$i['quantidade'],
-                    'precoUnitario' => round($i['preco_unitario'], 2),
-                    'subtotal'      => round($i['subtotal'], 2),
-                ];
-            }, $itensProcessados),
-            'createdAt'    => gmdate('Y-m-d\TH:i:s\Z')
-        ]);
+        return $this->respondCreated($resultado);
     }
 
     #[OA\Patch(
@@ -373,8 +325,11 @@ class PedidosController extends ResourceController
     )]
     public function atualizarPedido($id = null)
     {
-        $pedido = $this->pedidoModel->find($id);
+        if (empty($id)) {
+            return erro_json('PARAMETRO_OBRIGATORIO', 'O ID do pedido é obrigatório.', [], 422);
+        }
 
+        $pedido = $this->pedidoModel->find($id);
         if (!$pedido) {
             return erro_json(
                 'PEDIDO_NAO_ENCONTRADO',
@@ -404,26 +359,25 @@ class PedidosController extends ResourceController
             );
         }
 
-        $statusAnterior = $pedido['status'];
-        $this->pedidoModel->update($id, ['status' => $novoStatus]);
+        // Delegação da atualização e auditoria para a Model
+        $resultado = $this->pedidoModel->atualizarStatus((int)$id, $novoStatus);
 
-        // Registrar na trilha de auditoria
-        $this->auditoriaModel->registrarLog(
-            'MUDAR_STATUS_PEDIDO',
-            'pedidos',
-            (string)$id,
-            null,
-            $pedido['canal_pedido'],
-            ['status_anterior' => $statusAnterior, 'novo_status' => $novoStatus]
-        );
+        if (!$resultado) {
+            return erro_json(
+                'ERRO_ATUALIZACAO',
+                'Falha ao atualizar status do pedido no banco de dados.',
+                [],
+                500
+            );
+        }
 
         return $this->respond([
             'message'        => 'Status do pedido atualizado com sucesso.',
-            'pedidoId'       => (int)$id,
-            'numeroPedido'   => $pedido['numero_pedido'],
-            'statusAnterior' => $statusAnterior,
-            'statusAtual'    => $novoStatus,
-            'updatedAt'      => gmdate('Y-m-d\TH:i:s\Z')
+            'pedidoId'       => $resultado['pedidoId'],
+            'numeroPedido'   => $resultado['numeroPedido'],
+            'statusAnterior' => $resultado['statusAnterior'],
+            'statusAtual'    => $resultado['statusAtual'],
+            'updatedAt'      => $resultado['updatedAt']
         ], 200);
     }
 }

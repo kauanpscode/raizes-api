@@ -47,10 +47,9 @@ class EstoqueUnidadeModel extends Model
 
         $novaQuantidade = $estoque['quantidade'] - $quantidade;
 
-        $sql = "UPDATE estoque_unidade 
-                SET quantidade = ?, updated_at = NOW() 
-                WHERE id = ?";
-
-        return $this->db->query($sql, [$novaQuantidade, $estoque['id']]);
+        return $this->update($estoque['id'], [
+            'quantidade' => $novaQuantidade,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 }

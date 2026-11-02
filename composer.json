@@ -39,6 +39,7 @@
         "sort-packages": true
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "swagger": "openapi app/Controllers/Api -o public/swagger.json --format json"
     }
 }

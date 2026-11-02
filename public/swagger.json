@@ -12,6 +12,53 @@
         }
     ],
     "paths": {
+        "/auditoria/logs": {
+            "get": {
+                "tags": [
+                    "Auditoria & Logs"
+                ],
+                "summary": "Consultar trilha de auditoria e rastreabilidade da franquia",
+                "description": "Lista o histórico de operações sensíveis executadas no sistema (criação de pedidos, pagamentos mock aprovados/recusados, mudanças de status, consentimentos LGPD) para fins de governança e conformidade.",
+                "operationId": "7933cfc6c4491b9bb06b4e1a46c7496b",
+                "parameters": [
+                    {
+                        "name": "entidade",
+                        "in": "query",
+                        "description": "Filtrar por entidade (ex: pedidos, pagamentos, consentimentos_lgpd)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "pedidos"
+                        }
+                    },
+                    {
+                        "name": "acao",
+                        "in": "query",
+                        "description": "Filtrar por ação sensível (ex: CRIAR_PEDIDO, PAGAMENTO_APROVADO, MUDAR_STATUS_PEDIDO)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "PAGAMENTO_APROVADO"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade máxima de registros retornados (padrão: 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Trilha de auditoria recuperada com sucesso"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "tags": [
@@ -118,6 +165,117 @@
                     },
                     "401": {
                         "description": "Token não informado ou inválido"
+                    }
+                }
+            }
+        },
+        "/lgpd/consentimento": {
+            "post": {
+                "tags": [
+                    "LGPD & Privacidade"
+                ],
+                "summary": "Registrar consentimento explícito do titular (Conformidade LGPD)",
+                "description": "Registra a manifestação livre, informada e inequívoca do titular para tratamento de dados cadastrais e programa de fidelização conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).",
+                "operationId": "200dc15d8b7cc78103a9bb83d3a256d2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "usuarioId",
+                                    "aceitou"
+                                ],
+                                "properties": {
+                                    "usuarioId": {
+                                        "description": "ID do usuário titular dos dados",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "aceitou": {
+                                        "description": "Aceite formal dos termos",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "termoVersao": {
+                                        "description": "Versão do termo de privacidade",
+                                        "type": "string",
+                                        "example": "v1.0"
+                                    },
+                                    "canal": {
+                                        "description": "Canal de coleta (APP, TOTEM, WEB, BALCAO)",
+                                        "type": "string",
+                                        "example": "APP"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Consentimento registrado com sucesso no banco de dados"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    },
+                    "422": {
+                        "description": "Campos obrigatórios ausentes"
+                    }
+                }
+            }
+        },
+        "/pagamentos/mock": {
+            "post": {
+                "tags": [
+                    "Pagamentos"
+                ],
+                "summary": "Processar pagamento simulado",
+                "description": "Simula o envio de cobrança a um provedor externo de pagamentos.",
+                "operationId": "5b3b2ed1cf3bd583687831a2e8f1954f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pedidoId"
+                                ],
+                                "properties": {
+                                    "pedidoId": {
+                                        "description": "ID do pedido a ser pago",
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "metodo": {
+                                        "description": "PIX, CARTAO_CREDITO, CARTAO_DEBITO, DINHEIRO",
+                                        "type": "string",
+                                        "example": "PIX"
+                                    },
+                                    "simulacao": {
+                                        "description": "APROVADO ou RECUSADO",
+                                        "type": "string",
+                                        "example": "APROVADO"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pagamento aprovado e status do pedido atualizado para PAGO"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    },
+                    "409": {
+                        "description": "Pagamento recusado pela operadora ou pedido já pago/cancelado"
+                    },
+                    "422": {
+                        "description": "Campos obrigatórios ausentes ou método inválido"
                     }
                 }
             }
@@ -520,8 +678,20 @@
     },
     "tags": [
         {
+            "name": "Auditoria & Logs",
+            "description": "Auditoria & Logs"
+        },
+        {
             "name": "Autenticação",
             "description": "Autenticação"
+        },
+        {
+            "name": "LGPD & Privacidade",
+            "description": "LGPD & Privacidade"
+        },
+        {
+            "name": "Pagamentos",
+            "description": "Pagamentos"
         },
         {
             "name": "Pedidos",
