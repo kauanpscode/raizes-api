@@ -18,20 +18,20 @@ class AuditoriaController extends ResourceController
     #[OA\Get(
         path: "/auditoria/logs",
         summary: "Consultar trilha de auditoria e rastreabilidade da franquia",
-        description: "Lista o histórico de operações sensíveis executadas no sistema (criação de pedidos, pagamentos mock aprovados/recusados, mudanças de status, consentimentos LGPD) para fins de governança e conformidade.",
+        description: "Lista o histórico de operações executadas no sistema para fins de governança e conformidade.",
         tags: ["Auditoria & Logs"],
         parameters: [
             new OA\Parameter(
                 name: "entidade",
                 in: "query",
-                description: "Filtrar por entidade (ex: pedidos, pagamentos, consentimentos_lgpd)",
+                description: "Filtrar por entidade",
                 required: false,
                 schema: new OA\Schema(type: "string", example: "pedidos")
             ),
             new OA\Parameter(
                 name: "acao",
                 in: "query",
-                description: "Filtrar por ação sensível (ex: CRIAR_PEDIDO, PAGAMENTO_APROVADO, MUDAR_STATUS_PEDIDO)",
+                description: "Filtrar por ação sensível",
                 required: false,
                 schema: new OA\Schema(type: "string", example: "PAGAMENTO_APROVADO")
             ),
@@ -62,7 +62,6 @@ class AuditoriaController extends ResourceController
 
         $logs = $this->auditoriaModel->getLogs($entidade, $acao, $limit);
 
-        // Decodifica o campo detalhes_json para exibição limpa na API
         $logsFormatados = array_map(static function ($log) {
             $log['detalhes'] = !empty($log['detalhes_json']) ? json_decode($log['detalhes_json'], true) : null;
             unset($log['detalhes_json']);

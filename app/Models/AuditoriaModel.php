@@ -46,9 +46,6 @@ class AuditoriaModel extends Model
         ]);
     }
 
-    /**
-     * Retorna os registros da trilha de auditoria com dados do usuário
-     */
     public function getLogs(?string $entidade = null, ?string $acao = null, int $limit = 50)
     {
         $sql = "SELECT auditoria_logs.*, usuarios.nome as usuario_nome, usuarios.email as usuario_email 

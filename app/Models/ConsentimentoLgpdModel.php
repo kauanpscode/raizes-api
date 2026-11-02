@@ -12,21 +12,18 @@ class ConsentimentoLgpdModel extends Model
     protected $returnType       = 'array';
     protected $protectFields    = true;
 
-    protected $allowedFields    = [
-        'usuario_id',
-        'termo_versao',
-        'aceitou',
-        'finalidade',
-        'ip_origem',
-        'canal',
-        'created_at',
-    ];
+    protected $allowedFields    = [];
 
     protected $useTimestamps = false;
 
-    /**
-     * Registra o consentimento de um usuário e gera log de auditoria
-     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        $colunasTabela = $this->db->getFieldNames($this->table);
+        $this->allowedFields = $colunasTabela;
+    }
+
     public function registrarConsentimento(array $dados): array
     {
         $registroId = $this->insert([
@@ -56,9 +53,6 @@ class ConsentimentoLgpdModel extends Model
         return $this->find($registroId);
     }
 
-    /**
-     * Retorna o histórico de consentimentos de um usuário
-     */
     public function getConsentimentosPorUsuario(int $usuarioId)
     {
         return $this->where('usuario_id', $usuarioId)

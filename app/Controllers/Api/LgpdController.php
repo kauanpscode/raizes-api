@@ -53,7 +53,6 @@ class LgpdController extends ResourceController
     {
         $dados = $this->request->getJSON(true);
 
-        // 1. Validação de campos obrigatórios
         if (empty($dados['usuarioId'])) {
             return erro_json(
                 'CAMPOS_OBRIGATORIOS_AUSENTES',
@@ -72,7 +71,6 @@ class LgpdController extends ResourceController
             );
         }
 
-        // 2. Validação de existência do usuário
         $usuario = $this->usuarioModel->find((int)$dados['usuarioId']);
         if (!$usuario) {
             return erro_json(
@@ -83,7 +81,6 @@ class LgpdController extends ResourceController
             );
         }
 
-        // 3. Persistência e log via Model
         $registro = $this->consentimentoModel->registrarConsentimento([
             'usuario_id'   => (int)$dados['usuarioId'],
             'termo_versao' => $dados['termoVersao'] ?? 'v1.0',

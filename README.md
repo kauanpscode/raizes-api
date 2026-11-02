@@ -1,11 +1,11 @@
-# 🌽 Raízes do Nordeste — API REST
+# Raízes do Nordeste — API REST
 ### Centro Universitário Internacional UNINTER — Projeto Multidisciplinar (Trilha Back-End / 2026)
 
 API REST completa desenvolvida para a gestão e modernização operacional da rede de lanchonetes nordestinas **"Raízes do Nordeste"**. O sistema atende matriz e filiais com suporte nativo à **multicanalidade** (App, Totem, Balcão, Pick-up e Web), integração desacoplada de pagamento simulado (**Mock Gateway**), controle de estoque regional, conformidade com a **LGPD** e rastreabilidade por **trilha de auditoria**.
 
 ---
 
-## 🚀 1. Requisitos de Sistema
+## 1. Requisitos de Sistema
 
 * **Linguagem:** PHP 8.2 ou superior (com extensões `php-sqlite3`, `php-mbstring`, `php-intl`, `php-curl`, `php-json`).
 * **Gerenciador de Dependências:** Composer 2.x.
@@ -16,7 +16,7 @@ API REST completa desenvolvida para a gestão e modernização operacional da re
 
 ---
 
-## ⚙️ 2. Instalação e Execução Passo a Passo
+## 2. Instalação e Execução Passo a Passo
 
 ### Passo 1: Clonar o Repositório
 ```bash
@@ -56,7 +56,7 @@ A API estará acessível em: `http://localhost:8080/api`
 
 ---
 
-## 📚 3. Documentação Interativa da API (Swagger / OpenAPI)
+## 3. Documentação Interativa da API (Swagger / OpenAPI)
 
 A documentação interativa Swagger UI pode ser acessada diretamente pelo navegador:
 * **URL do Swagger UI:** [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
@@ -69,7 +69,7 @@ composer swagger
 
 ---
 
-## 🧪 4. Como Executar os Testes (Coleção Postman)
+## 4. Como Executar os Testes (Coleção Postman)
 
 O projeto inclui uma coleção completa com **18 cenários de teste automatizados** (cobrindo fluxos positivos e negativos de regras de negócio, validações, estoque e autorização).
 
@@ -85,7 +85,7 @@ O projeto inclui uma coleção completa com **18 cenários de teste automatizado
 
 ---
 
-## 🔐 5. Perfis de Usuários Pré-Cadastrados (Seed)
+## 5. Perfis de Usuários Pré-Cadastrados (Seed)
 
 | Usuário | E-mail | Senha | Perfil (Role) | Unidade |
 | :--- | :--- | :---: | :---: | :---: |
@@ -97,7 +97,7 @@ O projeto inclui uma coleção completa com **18 cenários de teste automatizado
 
 ---
 
-## 🏛️ 6. Arquitetura em Camadas (Separation of Concerns)
+## 6. Arquitetura em Camadas (Separation of Concerns)
 
 O sistema segue rigorosamente o princípio de separação de responsabilidades:
 * **Camada de Interface / Controllers (`app/Controllers/Api/`):** Validação de payloads HTTP, headers, autorização e padronização de respostas JSON através de helpers (`script_helper`).
@@ -106,6 +106,6 @@ O sistema segue rigorosamente o princípio de separação de responsabilidades:
 
 ---
 
-## 🛡️ 7. Declaração Obrigatória de Uso de IA
+## 7. Declaração Obrigatória de Uso de IA
 
 Em estrita conformidade com as diretrizes avaliativas da disciplina de Projeto Multidisciplinar (ano 2026), declara-se que ferramentas de inteligência artificial generativa (Google Antigravity / Gemini 3.8) foram utilizadas exclusivamente como recurso auxiliar de suporte ao estudo, revisão gramatical/ortográfica, estruturação documental segundo as normas da ABNT e consulta de boas práticas da arquitetura REST, sem substituição do raciocínio analítico, tomada de decisão técnica ou autoria do estudante. Toda a implementação em código-fonte, migrações, models, controladores e testes foi executada pelo aluno conforme histórico do Git.
