@@ -7,12 +7,45 @@ API REST completa desenvolvida para a gestão e modernização operacional da re
 
 ## 1. Requisitos de Sistema
 
-* **Linguagem:** PHP 8.2 ou superior (com extensões `php-sqlite3`, `php-mbstring`, `php-intl`, `php-curl`, `php-json`).
+* **Linguagem:** PHP 8.2 ou superior (recomendado **PHP 8.4** para compatibilidade com as dependências do `composer.lock`).
 * **Gerenciador de Dependências:** Composer 2.x.
-* **Banco de Dados:** SQLite3 (banco de arquivos local em `writable/raizes.sqlite`) ou MySQL 8.x.
+* **Banco de Dados:** SQLite3 (arquivo local em `writable/raizes.sqlite`) ou MySQL 8.x.
 * **Framework:** CodeIgniter 4.7+.
 * **Documentação:** OpenAPI 3.0 / Swagger UI.
 * **Testes:** Postman / Insomnia.
+
+### 1.1 Configuração de Extensões do PHP (`php.ini`)
+
+Para que o CodeIgniter 4 e a conexão com SQLite funcionem corretamente, as seguintes extensões precisam estar habilitadas no seu arquivo `php.ini`:
+
+* `pdo_sqlite`
+* `sqlite3`
+* `mbstring`
+* `intl`
+* `curl`
+* `fileinfo`
+* `openssl`
+
+> [!IMPORTANT]
+> **Atenção no Windows (instalação manual ou XAMPP):**
+> 1. No arquivo `php.ini` (ex.: `C:\php\php.ini`), certifique-se de descomentar a diretiva do diretório de extensões:
+>    ```ini
+>    extension_dir = "ext"
+>    ```
+> 2. Descomente as linhas das extensões (remova o `;` inicial):
+>    ```ini
+>    extension=curl
+>    extension=fileinfo
+>    extension=intl
+>    extension=mbstring
+>    extension=openssl
+>    extension=pdo_sqlite
+>    extension=sqlite3
+>    ```
+> 3. No **Linux / Ubuntu**, instale os pacotes correspondentes via apt:
+>    ```bash
+>    sudo apt update && sudo apt install php8.4-cli php8.4-sqlite3 php8.4-mbstring php8.4-intl php8.4-curl php8.4-xml
+>    ```
 
 ---
 
@@ -31,10 +64,21 @@ composer install
 
 ### Passo 3: Configurar Variáveis de Ambiente
 Copie o arquivo de exemplo `.env.example` para `.env`:
-```bash
-cp .env.example .env
-```
-> O arquivo `.env` já vem pré-configurado por padrão para desenvolvimento local com SQLite em `writable/raizes.sqlite`.
+* **Linux / macOS:**
+  ```bash
+  cp .env.example .env
+  ```
+* **Windows (PowerShell):**
+  ```powershell
+  Copy-Item .env.example .env
+  ```
+> **Nota sobre o SQLite:** O arquivo `.env` utiliza por padrão o valor relativo:
+> ```ini
+> database.default.DBDriver = SQLite3
+> database.default.database = raizes.sqlite
+> database.default.foreignKeys = true
+> ```
+> O CodeIgniter 4 resolverá este caminho automaticamente para `writable/raizes.sqlite` de forma transparente tanto em Windows quanto em Linux/macOS.
 
 ### Passo 4: Executar as Migrações do Banco de Dados
 Crie as 10 tabelas relacionais do sistema:
