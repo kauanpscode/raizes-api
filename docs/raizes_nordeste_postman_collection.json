@@ -165,7 +165,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/auth/me",
+              "raw": "{{baseUrl}}/auth/dados",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
             }
